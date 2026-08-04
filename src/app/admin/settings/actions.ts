@@ -54,7 +54,7 @@ export async function updateAdminCredentialsAction(
 
   if (passwordChanged) {
     await prisma.session.deleteMany({ where: { userId: admin.id } });
-    await createSession(admin.id);
+    await createSession(admin.id, false);
   }
 
   return {

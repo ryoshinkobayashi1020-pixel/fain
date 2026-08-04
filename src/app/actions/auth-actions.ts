@@ -56,7 +56,7 @@ export async function loginAction(_prevState: FormState, formData: FormData): Pr
     return { error: "メールアドレスまたはパスワードが正しくありません" };
   }
 
-  await createSession(user.id);
+  await createSession(user.id, user.role === "ADMIN" && user.mustChangeCredentials);
   redirect(
     user.role === "ADMIN"
       ? user.mustChangeCredentials

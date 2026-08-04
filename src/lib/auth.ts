@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import type { User } from "@/generated/prisma/client";
 
 const SESSION_COOKIE = "session_token";
+const ADMIN_SETUP_COOKIE = "admin_setup_required";
 const SESSION_DAYS = 30;
 
 export async function hashPassword(password: string) {
@@ -15,7 +16,7 @@ export async function verifyPassword(password: string, hash: string) {
   return bcrypt.compare(password, hash);
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, mustChangeCredentials = false) {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
 
@@ -31,6 +32,17 @@ export async function createSession(userId: string) {
     expires: expiresAt,
     path: "/",
   });
+  if (mustChangeCredentials) {
+    cookieStore.set(ADMIN_SETUP_COOKIE, "1", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: expiresAt,
+      path: "/",
+    });
+  } else {
+    cookieStore.delete(ADMIN_SETUP_COOKIE);
+  }
 }
 
 export async function destroySession() {
@@ -40,6 +52,7 @@ export async function destroySession() {
     await prisma.session.deleteMany({ where: { token } });
   }
   cookieStore.delete(SESSION_COOKIE);
+  cookieStore.delete(ADMIN_SETUP_COOKIE);
 }
 
 export async function getCurrentUser(): Promise<User | null> {
