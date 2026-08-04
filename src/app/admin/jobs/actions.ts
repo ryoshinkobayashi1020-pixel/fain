@@ -87,6 +87,19 @@ export async function reopenJob(jobId: string) {
   revalidatePath(`/admin/jobs/${jobId}`);
 }
 
+export async function completeJob(jobId: string) {
+  const admin = await requireUser("ADMIN");
+  if (!admin) redirect("/login");
+
+  await prisma.job.update({
+    where: { id: jobId },
+    data: { status: "COMPLETED", closedAutomatically: false },
+  });
+  revalidatePath("/admin/jobs");
+  revalidatePath(`/admin/jobs/${jobId}`);
+  revalidatePath("/jobs");
+}
+
 export async function confirmApplication(applicationId: string) {
   const admin = await requireUser("ADMIN");
   if (!admin) redirect("/login");

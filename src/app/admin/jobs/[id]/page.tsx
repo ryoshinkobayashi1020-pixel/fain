@@ -7,6 +7,7 @@ import { finalPayoutAmount } from "@/lib/payroll";
 import {
   closeJob,
   reopenJob,
+  completeJob,
   confirmApplication,
   rejectApplication,
   addPayoutAdjustment,
@@ -50,6 +51,7 @@ export default async function AdminJobDetailPage({
   const confirmedCount = job.applications.filter((a) => a.status === "CONFIRMED").length;
   const closeWithId = closeJob.bind(null, job.id);
   const reopenWithId = reopenJob.bind(null, job.id);
+  const completeWithId = completeJob.bind(null, job.id);
 
   return (
     <div>
@@ -86,14 +88,26 @@ export default async function AdminJobDetailPage({
           >
             編集する
           </Link>
-          <form action={job.status === "OPEN" ? closeWithId : reopenWithId}>
-            <button
-              type="submit"
-              className="whitespace-nowrap rounded-full border border-neutral-300 px-4 py-2 text-xs font-bold text-neutral-600"
-            >
-              {job.status === "OPEN" ? "募集を締め切る" : "募集を再開する"}
-            </button>
-          </form>
+          {job.status === "OPEN" ? (
+            <form action={closeWithId}>
+              <button type="submit" className="whitespace-nowrap rounded-full border border-neutral-300 px-4 py-2 text-xs font-bold text-neutral-600">
+                募集を締め切る
+              </button>
+            </form>
+          ) : (
+            <form action={reopenWithId}>
+              <button type="submit" className="whitespace-nowrap rounded-full border border-neutral-300 px-4 py-2 text-xs font-bold text-neutral-600">
+                募集を再開する
+              </button>
+            </form>
+          )}
+          {job.status !== "COMPLETED" && (
+            <form action={completeWithId}>
+              <button type="submit" className="whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white">
+                案件を終了済みにする
+              </button>
+            </form>
+          )}
         </div>
       </div>
 
@@ -148,7 +162,10 @@ export default async function AdminJobDetailPage({
       </div>
 
       <div className="rounded-2xl bg-white p-5 ring-1 ring-neutral-200">
-        <h2 className="mb-3 text-sm font-bold">勤怠・シフト状況</h2>
+        <h2 className="text-sm font-bold">勤怠・給与精算</h2>
+        <p className="mb-3 mt-1 text-xs text-neutral-500">
+          退勤後に、駐車場代・残業代の加算や、遅刻・欠勤の減額を登録できます。
+        </p>
         {job.shifts.length === 0 && (
           <p className="py-4 text-center text-sm text-neutral-400">確定したシフトはありません</p>
         )}

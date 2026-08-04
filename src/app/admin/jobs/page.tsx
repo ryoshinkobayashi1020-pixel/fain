@@ -7,19 +7,25 @@ import { JOB_CATEGORIES } from "@/lib/job-categories";
 const statusLabel: Record<string, { text: string; className: string }> = {
   OPEN: { text: "募集中", className: "bg-emerald-100 text-emerald-700" },
   CLOSED: { text: "締め切り", className: "bg-neutral-200 text-neutral-500" },
-  COMPLETED: { text: "完了", className: "bg-blue-100 text-blue-700" },
+  COMPLETED: { text: "終了済み", className: "bg-blue-100 text-blue-700" },
   CANCELED: { text: "中止", className: "bg-red-100 text-red-700" },
 };
 
 export default async function AdminJobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; status?: string }>;
 }) {
-  const { category } = await searchParams;
+  const { category, status } = await searchParams;
+  const selectedStatus = ["OPEN", "CLOSED", "COMPLETED", "CANCELED"].includes(status ?? "")
+    ? status
+    : undefined;
 
   const jobs = await prisma.job.findMany({
-    where: category ? { category } : {},
+    where: {
+      ...(category ? { category } : {}),
+      ...(selectedStatus ? { status: selectedStatus as "OPEN" | "CLOSED" | "COMPLETED" | "CANCELED" } : {}),
+    },
     include: { applications: true },
     orderBy: { workDate: "desc" },
   });
@@ -36,9 +42,36 @@ export default async function AdminJobsPage({
         </Link>
       </div>
 
+      <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+        {[
+          { value: undefined, label: "すべて" },
+          { value: "OPEN", label: "募集中" },
+          { value: "CLOSED", label: "締め切り" },
+          { value: "COMPLETED", label: "終了済み" },
+          { value: "CANCELED", label: "中止" },
+        ].map((item) => {
+          const query = new URLSearchParams();
+          if (item.value) query.set("status", item.value);
+          if (category) query.set("category", category);
+          return (
+            <Link
+              key={item.value ?? "ALL"}
+              href={`/admin/jobs${query.size ? `?${query}` : ""}`}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
+                selectedStatus === item.value
+                  ? "bg-accent text-white"
+                  : "bg-white text-neutral-600 ring-1 ring-neutral-200"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         <Link
-          href="/admin/jobs"
+          href={selectedStatus ? `/admin/jobs?status=${selectedStatus}` : "/admin/jobs"}
           className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
             !category ? "bg-neutral-900 text-white" : "bg-white text-neutral-600 ring-1 ring-neutral-200"
           }`}
@@ -48,7 +81,7 @@ export default async function AdminJobsPage({
         {JOB_CATEGORIES.map((c) => (
           <Link
             key={c}
-            href={`/admin/jobs?category=${encodeURIComponent(c)}`}
+            href={`/admin/jobs?category=${encodeURIComponent(c)}${selectedStatus ? `&status=${selectedStatus}` : ""}`}
             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
               category === c ? "bg-neutral-900 text-white" : "bg-white text-neutral-600 ring-1 ring-neutral-200"
             }`}
