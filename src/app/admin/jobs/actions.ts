@@ -22,13 +22,16 @@ function parseJobForm(formData: FormData) {
   if (!title || !clientCompany || !location || !workDate || !startTime || !endTime) {
     return null;
   }
+  if (!Number.isFinite(hourlyWage) || hourlyWage < 0 || !Number.isInteger(capacity) || capacity < 1) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(workDate) || !/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) return null;
+  if (endTime <= startTime) return null;
 
   return {
     title,
     clientCompany,
     location,
     description,
-    workDate: new Date(workDate),
+    workDate: new Date(`${workDate}T00:00:00+09:00`),
     startTime,
     endTime,
     hourlyWage: Math.max(hourlyWage, 0),
@@ -70,7 +73,7 @@ export async function closeJob(jobId: string) {
   const admin = await requireUser("ADMIN");
   if (!admin) redirect("/login");
 
-  await prisma.job.update({ where: { id: jobId }, data: { status: "CLOSED" } });
+  await prisma.job.update({ where: { id: jobId }, data: { status: "CLOSED", closedAutomatically: false } });
   revalidatePath("/admin/jobs");
   revalidatePath(`/admin/jobs/${jobId}`);
 }
@@ -79,7 +82,7 @@ export async function reopenJob(jobId: string) {
   const admin = await requireUser("ADMIN");
   if (!admin) redirect("/login");
 
-  await prisma.job.update({ where: { id: jobId }, data: { status: "OPEN" } });
+  await prisma.job.update({ where: { id: jobId }, data: { status: "OPEN", closedAutomatically: false } });
   revalidatePath("/admin/jobs");
   revalidatePath(`/admin/jobs/${jobId}`);
 }
@@ -92,7 +95,7 @@ export async function confirmApplication(applicationId: string) {
     where: { id: applicationId },
     include: { job: { include: { applications: true } }, worker: true },
   });
-  if (!application) return;
+  if (!application || application.status !== "APPLIED") return;
 
   const confirmedCount = application.job.applications.filter(
     (a) => a.status === "CONFIRMED"
@@ -114,7 +117,7 @@ export async function confirmApplication(applicationId: string) {
       create: { jobId: application.jobId, workerId: application.workerId },
     }),
     ...(willReachCapacity
-      ? [prisma.job.update({ where: { id: application.jobId }, data: { status: "CLOSED" } })]
+      ? [prisma.job.update({ where: { id: application.jobId }, data: { status: "CLOSED", closedAutomatically: true } })]
       : []),
   ]);
 
@@ -152,6 +155,9 @@ export async function rejectApplication(applicationId: string) {
   const admin = await requireUser("ADMIN");
   if (!admin) redirect("/login");
 
+  const existing = await prisma.application.findUnique({ where: { id: applicationId } });
+  if (!existing || !["APPLIED", "CONFIRMED"].includes(existing.status)) return;
+
   const application = await prisma.application.update({
     where: { id: applicationId },
     data: { status: "REJECTED" },
@@ -160,6 +166,14 @@ export async function rejectApplication(applicationId: string) {
   await prisma.shift.deleteMany({
     where: { jobId: application.jobId, workerId: application.workerId, status: "SCHEDULED" },
   });
+
+  const job = await prisma.job.findUnique({
+    where: { id: application.jobId },
+    include: { applications: { where: { status: "CONFIRMED" } } },
+  });
+  if (job?.closedAutomatically && job.applications.length < job.capacity) {
+    await prisma.job.update({ where: { id: job.id }, data: { status: "OPEN", closedAutomatically: false } });
+  }
 
   revalidatePath(`/admin/jobs/${application.jobId}`);
   revalidatePath("/admin/jobs");
@@ -198,5 +212,20 @@ export async function deletePayoutAdjustment(adjustmentId: string, jobId: string
   revalidatePath(`/admin/jobs/${jobId}`);
   revalidatePath("/admin/payroll");
   revalidatePath("/admin/payroll/print");
+  revalidatePath("/mypage/earnings");
+}
+
+export async function setPayoutStatus(payoutId: string, jobId: string, paid: boolean) {
+  const admin = await requireUser("ADMIN");
+  if (!admin) redirect("/login");
+
+  await prisma.payout.update({
+    where: { id: payoutId },
+    data: { status: paid ? "PAID" : "PENDING", paidAt: paid ? new Date() : null },
+  });
+  revalidatePath(`/admin/jobs/${jobId}`);
+  revalidatePath("/admin/payroll");
+  revalidatePath("/admin/payroll/print");
+  revalidatePath("/mypage");
   revalidatePath("/mypage/earnings");
 }

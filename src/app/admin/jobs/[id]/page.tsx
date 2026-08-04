@@ -11,6 +11,7 @@ import {
   rejectApplication,
   addPayoutAdjustment,
   deletePayoutAdjustment,
+  setPayoutStatus,
 } from "../actions";
 
 const ADJUSTMENT_PRESETS = ["残業代", "駐車場代", "遅刻減給", "欠勤減給", "その他"];
@@ -157,6 +158,9 @@ export default async function AdminJobDetailPage({
             const addAdjustmentWithIds = shift.payout
               ? addPayoutAdjustment.bind(null, shift.payout.id, job.id)
               : null;
+            const setPaidWithIds = shift.payout
+              ? setPayoutStatus.bind(null, shift.payout.id, job.id, shift.payout.status !== "PAID")
+              : null;
             return (
               <div key={shift.id} className="py-3 text-sm">
                 <div className="flex items-center justify-between gap-3">
@@ -185,6 +189,22 @@ export default async function AdminJobDetailPage({
                       基本給 {formatYen(shift.payout.amount)}({shift.payout.hoursWorked.toFixed(1)}
                       時間)
                     </p>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                        shift.payout.status === "PAID"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {shift.payout.status === "PAID" ? "支払済み" : "支払い待ち"}
+                      </span>
+                      {setPaidWithIds && (
+                        <form action={setPaidWithIds}>
+                          <button type="submit" className="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-bold text-neutral-600">
+                            {shift.payout.status === "PAID" ? "支払い待ちに戻す" : "支払済みにする"}
+                          </button>
+                        </form>
+                      )}
+                    </div>
 
                     {shift.payout.adjustments.length > 0 && (
                       <ul className="mb-2 flex flex-col gap-1">

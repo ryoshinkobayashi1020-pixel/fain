@@ -40,7 +40,17 @@ export async function cancelApplication(jobId: string) {
     where: { jobId, workerId: user.id, status: "SCHEDULED" },
   });
 
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: { applications: { where: { status: "CONFIRMED" } } },
+  });
+  if (job?.closedAutomatically && job.applications.length < job.capacity) {
+    await prisma.job.update({ where: { id: jobId }, data: { status: "OPEN", closedAutomatically: false } });
+  }
+
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/jobs");
   revalidatePath("/mypage/applications");
+  revalidatePath("/admin/jobs");
+  revalidatePath(`/admin/jobs/${jobId}`);
 }

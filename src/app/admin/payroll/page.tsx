@@ -28,7 +28,7 @@ export default async function AdminPayrollPage({
 
   const byWorker = new Map<
     string,
-    { name: string; phone: string | null; lineName: string | null; hours: number; amount: number }
+    { name: string; phone: string | null; lineName: string | null; hours: number; amount: number; pending: number }
   >();
   for (const p of monthPayouts) {
     const w = p.shift.worker;
@@ -38,9 +38,11 @@ export default async function AdminPayrollPage({
       lineName: w.workerProfile?.lineName ?? null,
       hours: 0,
       amount: 0,
+      pending: 0,
     };
     entry.hours += p.hoursWorked;
     entry.amount += finalPayoutAmount(p);
+    if (p.status === "PENDING") entry.pending += 1;
     byWorker.set(w.id, entry);
   }
   const rows = Array.from(byWorker.values()).sort((a, b) => b.amount - a.amount);
@@ -91,6 +93,7 @@ export default async function AdminPayrollPage({
               <th className="px-4 py-2.5 font-medium">連絡先</th>
               <th className="px-4 py-2.5 font-medium">勤務時間</th>
               <th className="px-4 py-2.5 font-medium">支払い額</th>
+              <th className="px-4 py-2.5 font-medium">状態</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
@@ -103,6 +106,13 @@ export default async function AdminPayrollPage({
                 </td>
                 <td className="px-4 py-3 text-xs text-neutral-600">{r.hours.toFixed(1)}時間</td>
                 <td className="px-4 py-3 text-sm font-bold text-accent">{formatYen(r.amount)}</td>
+                <td className="px-4 py-3 text-xs font-bold">
+                  {r.pending === 0 ? (
+                    <span className="text-emerald-600">支払済み</span>
+                  ) : (
+                    <span className="text-amber-600">未払い {r.pending}件</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

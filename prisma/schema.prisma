@@ -87,6 +87,7 @@ model Job {
   hourlyWage    Int
   capacity      Int           @default(1)
   status        JobStatus     @default(OPEN)
+  closedAutomatically Boolean @default(false)
   category      String?
   createdById   String
   createdBy     User          @relation("JobCreator", fields: [createdById], references: [id])

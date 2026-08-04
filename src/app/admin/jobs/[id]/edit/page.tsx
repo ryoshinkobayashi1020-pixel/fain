@@ -31,7 +31,7 @@ export default async function EditJobPage({
           clientCompany: job.clientCompany,
           location: job.location,
           category: job.category,
-          workDate: job.workDate.toISOString().slice(0, 10),
+          workDate: new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(job.workDate),
           startTime: job.startTime,
           endTime: job.endTime,
           hourlyWage: job.hourlyWage,
