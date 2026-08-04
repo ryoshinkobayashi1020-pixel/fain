@@ -47,13 +47,5 @@
     "prisma@7.9.1": true,
     "unrs-resolver@1.12.2": true,
     "esbuild@0.28.1": true
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "esbuild",
-      "prisma",
-      "unrs-resolver"
-    ]
   }
 }
