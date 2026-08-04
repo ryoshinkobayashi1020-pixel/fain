@@ -12,3 +12,9 @@ minimumReleaseAgeExclude:
   - eslint-config-next@16.3.0
   - jose@6.2.8
   - next@16.3.0
+
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - esbuild
+  - prisma
+  - unrs-resolver
