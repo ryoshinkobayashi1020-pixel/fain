@@ -21,7 +21,7 @@ export default async function AdminSettingsPage({
         </div>
       ) : (
         <p className="mb-5 mt-1 text-sm text-neutral-500">
-          管理者アカウントは1件のみです。ログイン用メールアドレスとパスワードを変更できます。
+          現在ログインしている管理者アカウントのメールアドレスとパスワードを変更できます。
         </p>
       )}
       <div className="rounded-2xl bg-white p-5 ring-1 ring-neutral-200 sm:p-6">
