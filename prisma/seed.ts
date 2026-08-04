@@ -35,6 +35,7 @@ async function main() {
       name: "田中 花子",
       email: "admin@finetech.co.jp",
       passwordHash: adminPasswordHash,
+      mustChangeCredentials: true,
       phone: "03-1234-5678",
     },
   });

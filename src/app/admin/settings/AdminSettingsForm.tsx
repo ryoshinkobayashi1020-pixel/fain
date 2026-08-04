@@ -3,7 +3,13 @@
 import { useActionState } from "react";
 import { updateAdminCredentialsAction } from "./actions";
 
-export default function AdminSettingsForm({ email }: { email: string }) {
+export default function AdminSettingsForm({
+  email,
+  firstLogin,
+}: {
+  email: string;
+  firstLogin: boolean;
+}) {
   const [state, action, pending] = useActionState(updateAdminCredentialsAction, undefined);
 
   return (
@@ -14,15 +20,17 @@ export default function AdminSettingsForm({ email }: { email: string }) {
       </div>
 
       <div className="border-t border-neutral-100 pt-5">
-        <p className="mb-3 text-sm font-bold">パスワード変更（任意）</p>
+          <p className="mb-3 text-sm font-bold">
+            {firstLogin ? "新しいパスワード" : "パスワード変更（任意）"}
+          </p>
         <div className="flex flex-col gap-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700">新しいパスワード</label>
-            <input name="newPassword" type="password" minLength={8} autoComplete="new-password" placeholder="変更しない場合は空欄" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" />
+            <input name="newPassword" type="password" required={firstLogin} minLength={8} autoComplete="new-password" placeholder={firstLogin ? "8文字以上" : "変更しない場合は空欄"} className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700">新しいパスワード（確認）</label>
-            <input name="newPasswordConfirmation" type="password" minLength={8} autoComplete="new-password" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" />
+            <input name="newPasswordConfirmation" type="password" required={firstLogin} minLength={8} autoComplete="new-password" className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" />
           </div>
         </div>
       </div>

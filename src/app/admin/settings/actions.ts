@@ -29,6 +29,12 @@ export async function updateAdminCredentialsAction(
   if (newPassword !== newPasswordConfirmation) {
     return { error: "新しいパスワードが一致しません" };
   }
+  if (admin.mustChangeCredentials && !newPassword) {
+    return { error: "初回設定では新しいパスワードの登録が必要です" };
+  }
+  if (admin.mustChangeCredentials && email === admin.email) {
+    return { error: "初回設定では新しいメールアドレスを登録してください" };
+  }
 
   const emailOwner = await prisma.user.findUnique({ where: { email } });
   if (emailOwner && emailOwner.id !== admin.id) {
@@ -36,8 +42,13 @@ export async function updateAdminCredentialsAction(
   }
 
   const passwordChanged = Boolean(newPassword);
-  const data: { email: string; passwordHash?: string } = { email };
+  const data: {
+    email: string;
+    passwordHash?: string;
+    mustChangeCredentials?: boolean;
+  } = { email };
   if (passwordChanged) data.passwordHash = await hashPassword(newPassword);
+  if (admin.mustChangeCredentials) data.mustChangeCredentials = false;
 
   await prisma.user.update({ where: { id: admin.id }, data });
 

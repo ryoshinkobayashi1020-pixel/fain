@@ -45,6 +45,7 @@ model User {
   name          String
   email         String          @unique
   passwordHash  String
+  mustChangeCredentials Boolean @default(false)
   phone         String?
   createdAt     DateTime        @default(now())
   workerProfile WorkerProfile?

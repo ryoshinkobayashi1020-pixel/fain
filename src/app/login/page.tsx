@@ -7,7 +7,13 @@ import LoginForm from "./LoginForm";
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) {
-    redirect(user.role === "ADMIN" ? "/admin" : "/jobs");
+    redirect(
+      user.role === "ADMIN"
+        ? user.mustChangeCredentials
+          ? "/admin/settings?first=1"
+          : "/admin"
+        : "/jobs",
+    );
   }
 
   return (

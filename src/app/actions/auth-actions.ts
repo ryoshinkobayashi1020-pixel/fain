@@ -57,7 +57,13 @@ export async function loginAction(_prevState: FormState, formData: FormData): Pr
   }
 
   await createSession(user.id);
-  redirect(user.role === "ADMIN" ? "/admin" : "/jobs");
+  redirect(
+    user.role === "ADMIN"
+      ? user.mustChangeCredentials
+        ? "/admin/settings?first=1"
+        : "/admin"
+      : "/jobs",
+  );
 }
 
 export async function logoutAction() {
