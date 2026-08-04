@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  WORKER
+}
+
+enum JobStatus {
+  OPEN
+  CLOSED
+  COMPLETED
+  CANCELED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  CONFIRMED
+  REJECTED
+  CANCELED
+  COMPLETED
+}
+
+enum ShiftStatus {
+  SCHEDULED
+  CHECKED_IN
+  CHECKED_OUT
+  NO_SHOW
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+}
+
+model User {
+  id            String          @id @default(cuid())
+  role          Role            @default(WORKER)
+  name          String
+  email         String          @unique
+  passwordHash  String
+  phone         String?
+  createdAt     DateTime        @default(now())
+  workerProfile WorkerProfile?
+  jobsCreated   Job[]           @relation("JobCreator")
+  applications  Application[]
+  shifts        Shift[]
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model WorkerProfile {
+  id       String  @id @default(cuid())
+  userId   String  @unique
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio      String?
+  skills   String?
+  station  String?
+  lineName String?
+  rating   Float   @default(0)
+}
+
+model Job {
+  id            String        @id @default(cuid())
+  title         String
+  description   String
+  clientCompany String
+  location      String
+  workDate      DateTime
+  startTime     String
+  endTime       String
+  hourlyWage    Int
+  capacity      Int           @default(1)
+  status        JobStatus     @default(OPEN)
+  category      String?
+  createdById   String
+  createdBy     User          @relation("JobCreator", fields: [createdById], references: [id])
+  createdAt     DateTime      @default(now())
+  applications  Application[]
+  shifts        Shift[]
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  jobId     String
+  job       Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  workerId  String
+  worker    User              @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  status    ApplicationStatus @default(APPLIED)
+  appliedAt DateTime          @default(now())
+
+  @@unique([jobId, workerId])
+}
+
+model Shift {
+  id         String      @id @default(cuid())
+  jobId      String
+  job        Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  workerId   String
+  worker     User        @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  status     ShiftStatus @default(SCHEDULED)
+  checkInAt  DateTime?
+  checkOutAt DateTime?
+  payout     Payout?
+
+  @@unique([jobId, workerId])
+}
+
+model Payout {
+  id          String              @id @default(cuid())
+  shiftId     String              @unique
+  shift       Shift               @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  hoursWorked Float
+  hourlyWage  Int
+  amount      Int
+  status      PayoutStatus        @default(PENDING)
+  paidAt      DateTime?
+  adjustments PayoutAdjustment[]
+}
+
+model PayoutAdjustment {
+  id        String   @id @default(cuid())
+  payoutId  String
+  payout    Payout   @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  label     String
+  amount    Int
+  createdAt DateTime @default(now())
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  body      String
+  delivered Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
