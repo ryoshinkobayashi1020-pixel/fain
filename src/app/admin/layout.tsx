@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut, LayoutDashboard, Briefcase, Users, Wallet } from "lucide-react";
+import { LogOut, LayoutDashboard, Briefcase, Users, Wallet, Settings } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { logoutAction } from "@/app/actions/auth-actions";
 
@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admin/jobs", label: "案件管理", icon: Briefcase },
   { href: "/admin/workers", label: "スタッフ管理", icon: Users },
   { href: "/admin/payroll", label: "給与管理", icon: Wallet },
+  { href: "/admin/settings", label: "管理者設定", icon: Settings },
 ];
 
 export default async function AdminLayout({

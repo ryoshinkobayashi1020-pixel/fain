@@ -35,6 +35,11 @@ export default async function LoginPage() {
             新規登録
           </Link>
         </p>
+        <p className="mt-3 text-center text-sm">
+          <Link href="/forgot-password" className="font-semibold text-accent">
+            パスワードを忘れた応募者はこちら
+          </Link>
+        </p>
       </div>
     </div>
   );

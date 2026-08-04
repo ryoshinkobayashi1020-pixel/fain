@@ -5,6 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { createSession, destroySession, hashPassword, verifyPassword } from "@/lib/auth";
 
 export type FormState = { error?: string } | undefined;
+export type ResetPasswordFormState = { error?: string; success?: string } | undefined;
+
+function normalizeName(value: string) {
+  return value.replace(/[\s\u3000]+/g, "").toLowerCase();
+}
+
+function normalizePhone(value: string) {
+  return value.replace(/\D/g, "");
+}
 
 export async function signupAction(_prevState: FormState, formData: FormData): Promise<FormState> {
   const name = String(formData.get("name") ?? "").trim();
@@ -54,4 +63,42 @@ export async function loginAction(_prevState: FormState, formData: FormData): Pr
 export async function logoutAction() {
   await destroySession();
   redirect("/login");
+}
+
+export async function resetWorkerPasswordAction(
+  _prevState: ResetPasswordFormState,
+  formData: FormData,
+): Promise<ResetPasswordFormState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const name = String(formData.get("name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const passwordConfirmation = String(formData.get("passwordConfirmation") ?? "");
+
+  if (!email || !name || !phone || password.length < 8) {
+    return { error: "メールアドレス・本名・電話番号と8文字以上の新しいパスワードを入力してください" };
+  }
+  if (password !== passwordConfirmation) {
+    return { error: "新しいパスワードが一致しません" };
+  }
+
+  const worker = await prisma.user.findFirst({
+    where: { email, role: "WORKER" },
+  });
+  const identityMatches =
+    worker &&
+    normalizeName(worker.name) === normalizeName(name) &&
+    normalizePhone(worker.phone ?? "") === normalizePhone(phone);
+
+  if (!worker || !identityMatches) {
+    return { error: "入力された応募者情報を確認できませんでした" };
+  }
+
+  const passwordHash = await hashPassword(password);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: worker.id }, data: { passwordHash } }),
+    prisma.session.deleteMany({ where: { userId: worker.id } }),
+  ]);
+
+  return { success: "パスワードを変更しました。新しいパスワードでログインしてください。" };
 }
