@@ -53,7 +53,7 @@ export async function loginAction(_prevState: FormState, formData: FormData): Pr
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
-    return { error: "メールアドレスまたはパスワードが正しくありません" };
+    return { error: "ID・メールアドレスまたはパスワードが正しくありません" };
   }
 
   await createSession(user.id, user.role === "ADMIN" && user.mustChangeCredentials);

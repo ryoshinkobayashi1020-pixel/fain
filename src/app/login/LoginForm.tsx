@@ -10,13 +10,13 @@ export default function LoginForm() {
     <form action={action} className="flex flex-col gap-4">
       <div>
         <label className="mb-1 block text-sm font-medium text-neutral-700">
-          メールアドレス
+          IDまたはメールアドレス
         </label>
         <input
           name="email"
-          type="email"
+          type="text"
           required
-          placeholder="you@example.com"
+          placeholder="管理者IDまたはメールアドレス"
           className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-base focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         />
       </div>
